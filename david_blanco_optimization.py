@@ -15,17 +15,27 @@ def function_to_apply(lat, lon):
 
 df = speed_df.copy()
 
-start = time.time()
-
 list_results = []
+start = time.time()
 for i in range(0, len(df)):
     r = function_to_apply(df.iloc[i]['latitude'], df.iloc[i]['longitude'])
     list_results.append(r)
 
 df['distance'] = list_results
-
 elapsed_time_fl = (time.time() - start)
 print(f"Time taken using iloc: {elapsed_time_fl}")
+
+########################################################################################
+
+def ftapply(row):
+    return np.sin(row['latitude']/2)**2 + np.cos(row['longitude']) * np.sin(row['longitude']/2)**2
+
+df = speed_df.copy()
+
+start = time.time()
+df['distance'] = df.apply(ftapply, axis=1)
+elapsed_time_fl = (time.time() - start)
+print(f"Time taken using pandas apply: {elapsed_time_fl}")
 
 ########################################################################################
 
@@ -36,4 +46,4 @@ start = time.time()
 df['distance'] = np.sin(df['latitude']/2)**2 + np.cos(df['longitude']) * np.sin(df['longitude']/2)**2
 elapsed_time_fl = (time.time() - start)
 
-print(f"Time taken when creating a new column with NumPy: {elapsed_time_fl}")
+print(f"Time taken when creating a new column vectorizing the operation: {elapsed_time_fl}")
