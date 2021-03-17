@@ -56,7 +56,7 @@ def connect():
         driver = '{ODBC Driver 17 for SQL Server}'
         conn = pyodbc.connect(
             f'''DRIVER={driver}; SERVER=localhost; Database=mock_db; UID=sa; PWD={password};''')
-        print("Successfully conected to DB")
+        print("Successfully connected to DB")
         return conn
 
     except:
@@ -85,18 +85,25 @@ def create_table():
     print("table created successfully")
     cursor.execute(table)
     conn.commit()
-    conn.close()
+
+    return conn
 
 
 def load():
-    create_table()
+    conn = create_table()
 
-    df = pd.read_csv("/data/david_blanco_etl.csv")
+    df = pd.read_csv("data/david_blanco_etl.csv")
+    df.rename(columns={"datetime": "demand_datetime", "id": "indicator_id"}, inplace=True)
+    df.insert(0, 'id', [x + 1 for x in range(len(df))])
+    for col in df.select_dtypes(include="object").columns.to_list():
+        df[f'{col}'] = df[f'{col}'].astype('category')
 
-    conn = connect()
     cursor = conn.cursor()
-    print("Insertin values into DB")
+    print("Insertin values into DB..")
     sql = "INSERT INTO demand_forecast_esios ([id],[name],[indicator_id], [demand_datetime], [demand_forecast], [update_timestamp]) VALUES (?,?,?,?,?,?)"
     sql_cols = df.columns.to_list()
     cursor.executemany(sql, df[sql_cols].values.tolist())
     conn.commit()
+    print("Insertion successful")
+    conn.close()
+    print("database conection closed")
