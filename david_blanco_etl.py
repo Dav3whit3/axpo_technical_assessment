@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 from tqdm import tqdm
+import pyodbc
 
 
 indicator_id = '460'
@@ -46,3 +47,56 @@ def df(json):
 
     print("Saving csv at 'data' folder")
     table.to_csv("data/david_blanco_etl.csv", index=False)
+
+
+def connect():
+    print("Conecting to DB. Please insert password:")
+    password = input()
+    try:
+        driver = '{ODBC Driver 17 for SQL Server}'
+        conn = pyodbc.connect(
+            f'''DRIVER={driver}; SERVER=localhost; Database=mock_db; UID=sa; PWD={password};''')
+        print("Successfully conected to DB")
+        return conn
+
+    except:
+        print("wrong password")
+        connect()
+
+
+def create_table():
+    conn = connect()
+    cursor = conn.cursor()
+
+    print("Creating Table")
+    table = """
+        CREATE TABLE demand_forecast_esios
+        (
+        id int PRIMARY KEY,
+        name varchar(100),
+        indicator_id int,
+        demand_datetime varchar(100),
+        demand_forecast int,
+        update_timestamp varchar(100)
+        )
+
+    """
+
+    print("table created successfully")
+    cursor.execute(table)
+    conn.commit()
+    conn.close()
+
+
+def load():
+    create_table()
+
+    df = pd.read_csv("/data/david_blanco_etl.csv")
+
+    conn = connect()
+    cursor = conn.cursor()
+    print("Insertin values into DB")
+    sql = "INSERT INTO demand_forecast_esios ([id],[name],[indicator_id], [demand_datetime], [demand_forecast], [update_timestamp]) VALUES (?,?,?,?,?,?)"
+    sql_cols = df.columns.to_list()
+    cursor.executemany(sql, df[sql_cols].values.tolist())
+    conn.commit()

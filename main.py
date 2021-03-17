@@ -9,3 +9,4 @@ token = input()
 if __name__ == '__main__':
     json_data = ETL.get(token, indicator_id, start_date, end_date)
     dataframe = ETL.df(json_data)
+    load = ETL.load()
