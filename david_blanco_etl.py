@@ -59,7 +59,7 @@ def connect():
         print("Successfully connected to DB")
         return conn
 
-    except:
+    except Exception:
         print("wrong password")
         connect()
 

@@ -4,7 +4,14 @@ import time
 
 speed_df = pd.read_csv("DataOps_test/dataset_speed_optimization.csv")
 
-
+print()
+print("Running time optimization:")
+print()
+print("""
+      The following runtimes (in seconds) represent 3 different ways to apply the same formula.
+      CSV used: dataset_speed_optimization.csv
+""")
+print()
 ########################################################################################
 
 def function_to_apply(lat, lon):
@@ -27,8 +34,10 @@ print(f"Time taken using iloc: {elapsed_time_fl}")
 
 ########################################################################################
 
+
 def ftapply(row):
     return np.sin(row['latitude']/2)**2 + np.cos(row['longitude']) * np.sin(row['longitude']/2)**2
+
 
 df = speed_df.copy()
 
@@ -47,3 +56,37 @@ df['distance'] = np.sin(df['latitude']/2)**2 + np.cos(df['longitude']) * np.sin(
 elapsed_time_fl = (time.time() - start)
 
 print(f"Time taken when creating a new column vectorizing the operation: {elapsed_time_fl}")
+
+########################################################################################
+print()
+print()
+print("Memory usage optimization:")
+print()
+print("""
+    The following table will show the percentual change of memory usage (in bytes) after optimizing its data types.
+    CSV used: dataset_memory_optimization.csv
+""")
+print()
+
+df = pd.read_csv("DataOps_test/dataset_memory_optimization.csv")
+initial_memory_usage = df.memory_usage(deep=True)
+
+print("Casting object-type columns to 'category'")
+type_object = df.select_dtypes(include='object').columns.to_list()
+for col in type_object:
+    df[f'{col}'] = df[f'{col}'].astype("category")
+
+print("Downscaling numeric-type columns")
+print()
+df["ean_hotel_id"] = pd.to_numeric(df["ean_hotel_id"], downcast="unsigned")
+float_type = df.select_dtypes(include='float').columns.to_list()
+df[float_type] = df[float_type].apply(pd.to_numeric, downcast="float")
+
+new_memory_usage = pd.DataFrame(df.memory_usage(deep=True))
+
+result = pd.concat([initial_memory_usage, new_memory_usage], axis=1)
+result.columns = ["initial_memory_usage", "new_memory_usage"]
+result['percentual_change'] = (result['new_memory_usage'] - result['initial_memory_usage']) / result['initial_memory_usage']*100
+result['percentual_change'] = result['percentual_change'].round(decimals=2).astype(str) + '%'
+
+print(result)
